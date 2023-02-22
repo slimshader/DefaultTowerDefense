@@ -1,4 +1,5 @@
 using DefaultEcs;
+using DefaultEcs.System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -110,10 +111,27 @@ namespace DefaultTowerDefense
 
         private World _world;
 
+        private ISystem<float> _updateSystems;
+
         // Start is called before the first frame update
         void Start()
         {
             _world = new World();
+
+
+            _world.SubscribeEntityComponentAdded((in Entity e, in Prefabs.Tile _) =>
+            {
+                e.Set(new Color(.2f, .34f, .15f));
+                e.Set(new Box(TileSize, TileHeight, TileSize));
+            });
+
+            _world.SubscribeEntityComponentAdded((in Entity e, in Prefabs.Path _) =>
+            {
+                e.Set(new Color(.2f, .2f, .2f));
+                e.Set(new Box(TileSize + TileSpacing, PathHeight, TileSize + TileSpacing));
+            });
+
+            _updateSystems = new CreateBoxViewSystem(_world);
 
             InitGame(_world);
             InitLevel(_world);
@@ -122,7 +140,7 @@ namespace DefaultTowerDefense
         // Update is called once per frame
         void Update()
         {
-
+            _updateSystems.Update(Time.deltaTime);
         }
 
         private static void InitGame(World ecs)
@@ -163,9 +181,9 @@ namespace DefaultTowerDefense
 
             {
                 var e = ecs.CreateEntity();
-                e.Set(new Position(0, -2.5f, ToZ(TileCountZ / 2 - .5f)));
+                e.Set(new Position(0, -2.5f, ToZ(TileCountZ / 2 - .5f)));                
+                e.Set(new Color(.11f, .15f, .1f));
                 e.Set(new Box(ToX(TileCountX + .5f) * 2, 5, ToZ(TileCountZ + 2)));
-                e.Set(new Color(.11f, 15f, .1f));
             }
 
             for (int x = 0; x < TileCountX; x++)
@@ -212,8 +230,8 @@ namespace DefaultTowerDefense
 
                 }
             }
-
         }
+
         private static float Randf(float max) => UnityEngine.Random.Range(0, max);
         private static float ToCoord(float x) => x * (TileSpacing + TileSize) - (TileSize / 2.0f);
         private static float ToX(float x) => ToCoord(x + .5f) - ToCoord(TileCountX / 2.0f);
